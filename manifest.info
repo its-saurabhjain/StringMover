@@ -1,0 +1,2 @@
+Main-Class: com.xerox.fans2.FANS
+Class-Path: commons-logging-api.jar commons-io-1.0.jar log4j-1.2.8.jar com.ibm.mq.jar connector.jar log4j.properties commons-logging.jar
