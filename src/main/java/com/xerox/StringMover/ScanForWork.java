@@ -59,9 +59,7 @@ public class ScanForWork extends TimerTask {
 		if( log.isDebugEnabled() ) {
 			log.debug("ScanForWork.run()");
 		}
-		boolean fileMoved = false;
 		boolean messageSent = false;
-		String messageReceived="";
 		// check directory for files with the desired extensions
 		File getdir = new File(Configurator.getInstance().getWATCH_DIRECTORY());
 		File newloc = new File(Configurator.getInstance().getSEND_DIRECTORY());
@@ -73,91 +71,44 @@ public class ScanForWork extends TimerTask {
 			log.debug("Sleeping for " + settleTime + " seconds to let files settle before acting upon them...");
 			Thread.sleep(1000L * settleTime);
 			// keep trying until some file succeeds or no files are left to try 
+			////////////////////////////////////////////////Send Ping Messages///////////////////////////////////
 			FileRecord fileRecord;
 			FileRecord hasFile;
 			Iterator it = files.iterator();
 			while(it.hasNext()) {
-				// grab the next one
-				File file = (File) it.next();
-				String name = file.getName();
-				// it is necessary to capture the file size here, before it is moved
-				String filelen = Long.toString(file.length());
-				if( log.isDebugEnabled() ) {
-					log.debug("file length = " + file.length());
-				}
-				////////////////////////////////////////////////////////////////////////////////////////////////
-				//Check if the message is in the process list or not and if not add it to the list, so that it will not be processed again in case of failure
-				FileParser fileParser= new FileParser();
-				//Parse File and create a Ping MQ Message
-				String pingMessage = fileParser.parseFile(file.getAbsolutePath());
-				String msgCor = pingMessage.substring(0, 25);
-				hasFile = fileList.get(msgCor);
-				if(hasFile == null)
-				{
-					//send Ping MQ message and wait for the response
-					messageSent = sendMessage(pingMessage);
-					fileRecord = new FileRecord(name, file.getAbsolutePath());
-					fileList.put(msgCor, fileRecord);
-				}
-				//Receive the response from download queue, to decide further processing 
-				Thread.sleep(1000L * settleTime);
-				String receivedMessage = receiveMessage();
-				//Check the received message in the ping message to get the correct file
-				String message[] = receivedMessage.split("\\=");
-				String messageCorResp = message[0].substring(0, 25);
-				String messageStatus = message[1];
-				//String sendFile = "";
-				//get the file name based on msgCor
-				FileRecord rec = fileList.get(messageCorResp);
-				if(rec != null){
-					//Valid record, continue sending the file
-					if(messageStatus == "00" &&  name == rec.fileName){
-						//create MQ message from file
-						File file1 = new File(rec.filePath);
-						String mqMessage = fileParser.parseFile2(file1.getAbsolutePath());
-						fileParser.writeToFile(mqMessage);
-						//send the message to MQ
-						messageSent = sendMessage(mqMessage);
-						if(messageSent) {
-							// move file to archive
-							boolean success2 = fileParser.moveFile(file1, newloc, invalid);
-							if( success2 ) {
-								fileList.remove(messageCorResp);
-								if( log.isErrorEnabled() ) {
-									log.error("Moved " + file1.getName() + " back to original position for retry");
-								}
-							} else {
-								if( log.isErrorEnabled() ) {
-									log.error(">>>>>                                                                       <<<<<");
-									log.error(">>>>> MQ send failed AND file could not be moved back to original position! <<<<<");
-									log.error(">>>>> Potential loss of data in file " + file1.getName() + " <<<<<");
-									log.error(">>>>>                                                                       <<<<<");
-								}
-							}
-						}
+					// grab the next one
+					File file = (File) it.next();
+					String name = file.getName();
+					// it is necessary to capture the file size here, before it is moved
+					String filelen = Long.toString(file.length());
+					if( log.isDebugEnabled() ) {
+						log.debug("file length = " + file.length());
 					}
-					//04:error – invalid record - don’t send any more of this string
-					//08:error – trailer record not sent - don’t send any more of this string
-					//12:error – duplicate entry - don’t send any more of this string.
-					else if ((messageStatus == "04" ||  messageStatus == "08" || messageStatus == "12") && name == rec.fileName)
+					//Check if the message is in the process list or not and if not add it to the list, so that it will not be processed again in case of failure
+					FileParser fileParser= new FileParser();
+					//Parse File and create a Ping MQ Message
+					String pingMessage = fileParser.parseFile(file.getAbsolutePath());
+					String msgCor = pingMessage.substring(0, 25);
+					hasFile = fileList.get(msgCor);
+					//send Ping MQ message if it has not been sent
+					if(hasFile == null)
 					{
-						File file1 = new File(rec.filePath);
-						boolean success2 = fileParser.moveFile(file1, invalid, newloc);
-						if(success2) {
-							//remove the record from the processing list
-							fileList.remove(messageCorResp);
-							if( log.isErrorEnabled() ) {
-								log.error("Moved " + file.getName() + " to Invalid Files Location");
-							}
-						} else {
-							if( log.isErrorEnabled() ) {
-								log.error(">>>>>                                                                       <<<<<");
-								log.error(">>>>> MQ send failed AND file could not be moved back to original position! <<<<<");
-								log.error(">>>>> Potential loss of data in file " + file.getName() + " <<<<<");
-								log.error(">>>>>                                                                       <<<<<");
-							}
-						}
+						//messageSent = sendMessage(pingMessage);
+						fileRecord = new FileRecord(name, file.getAbsolutePath());
+						fileList.put(msgCor, fileRecord);
 					}
+				}
+			////////////////////////////////////////Receive Ping Responses and send the main file and move the files based on response status////////////////////////////
+			String receivedMessage = receiveMessage();
+			String responseMessages[] = receivedMessage.split("\\_");
+			if(responseMessages.length > 0)
+			{
+				for (int i= 0; i <= responseMessages.length; i++)
+				{
+					String message [] = responseMessages[i].split("\\=");
+					String messageCorResp = message[0].substring(0, 25);
+					String messageStatus = message[1];
+					processFile(messageCorResp, messageStatus, newloc, invalid);
 				}
 			}
 		}
@@ -186,19 +137,70 @@ public class ScanForWork extends TimerTask {
 	private String receiveMessage()
 	{
 		String messageReceived = "";
-		String sendFile = "";
-		boolean isMessageReceived = false;
 		try{
-			//mqms.setQueueName(Configurator.getInstance().getMQ_UPLOAD_QUEUE());
 			mqms.setQueueName(Configurator.getInstance().getMQ_DOWNLOAD_QUEUE());	
 			messageReceived = mqms.receive();
-			if(messageReceived == null || messageReceived == "")
-				messageReceived = "0112016/05/23091215501130RC=00";
 		}catch (Exception e){
 			if( log.isErrorEnabled() ) {
 				log.error("Failed to receive MQ message", e);
 			}
 		}
 		return messageReceived;
+	}
+	
+	private void processFile(String messageCorResp, String messageStatus, File newloc, File invalid)
+	{
+		//get the file name based on msgCor
+		FileRecord rec = fileList.get(messageCorResp);
+		FileParser fileParser = new FileParser();
+		if(rec != null){
+			//Valid record, continue sending the file
+			if(messageStatus.contains("00")){
+				//create MQ message from file
+				File file1 = new File(rec.filePath);
+				String mqMessage = fileParser.parseFile2(file1.getAbsolutePath());
+				//send the message to MQ
+				boolean messageSent = sendMessage(mqMessage);
+				if(messageSent) {
+					// move file to archive
+					boolean success2 = fileParser.moveFile(file1, newloc, invalid);
+					if( success2 ) {
+						fileList.remove(messageCorResp);
+						if( log.isErrorEnabled() ) {
+							log.error("Moved " + file1.getName() + " back to original position for retry");
+						}
+					} else {
+						if( log.isErrorEnabled() ) {
+							log.error(">>>>>                                                                       <<<<<");
+							log.error(">>>>> MQ send failed AND file could not be moved to new position! <<<<<");
+							log.error(">>>>> Potential loss of data in file " + file1.getName() + " <<<<<");
+							log.error(">>>>>                                                                       <<<<<");
+						}
+					}
+				}
+			}
+			//04:error – invalid record - don’t send any more of this string
+			//08:error – trailer record not sent - don’t send any more of this string
+			//12:error – duplicate entry - don’t send any more of this string.
+			else if (messageStatus.contains("04") ||  messageStatus.contains("08") || messageStatus.contains("12")) 
+			{
+				File file1 = new File(rec.filePath);
+				boolean success2 = fileParser.moveFile(file1, invalid, newloc);
+				if(success2) {
+					//remove the record from the processing list
+					fileList.remove(messageCorResp);
+					if( log.isErrorEnabled() ) {
+						log.error("Moved " + file1.getName() + " to Invalid Files Location");
+					}
+				} else {
+					if( log.isErrorEnabled() ) {
+						log.error(">>>>>                                                                       <<<<<");
+						log.error(">>>>> MQ send failed AND file could not be moved back to new position! <<<<<");
+						log.error(">>>>> Potential loss of data in file " + file1.getName() + " <<<<<");
+						log.error(">>>>>                                                                       <<<<<");
+					}
+				}
+			}
+		}
 	}
 }

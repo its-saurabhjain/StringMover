@@ -3,15 +3,10 @@ package com.xerox.StringMover;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
-import java.util.StringTokenizer;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-
-/**
- * @author A1KK1
- * 
+/*
  * This class is implemented as a Singleton to ensure that only one
  * configuration exists within the application.
  */
@@ -35,13 +30,7 @@ public class Configurator {
 		return _instance;
 	}
 
-	// TODO multiple watch directories?
-	// TODO filename masks?
-	// TODO multiple message queues?
-	// TODO multiple message formats?
-	// TODO relate directories or filename patterns to particular queues or formats?
-
-    private static String PROPERTY_FILE = "fans.properties";
+    private static String PROPERTY_FILE = "StringMover.properties";
     private static String WATCH_DIRECTORY = "path.watch";
     private static String BACKUP_DIRECTORY = "path.backup";
     private static String SEND_DIRECTORY = "path.send";
@@ -58,7 +47,6 @@ public class Configurator {
     private static String MQ_HOST = "mq.host";
     private static String MQ_PORT = "mq.port";
     private static String MQ_QUEUE_MANAGER = "mq.queuemgr";
-    //private static String MQ_QUEUE = "mq.queue";
     private static String MQ_UPLOAD_QUEUE = "mq.UploadQueue";
     private static String MQ_DOWNLOAD_QUEUE = "mq.DownloadQueue";
     private static String FILE_SETTLE_PERIOD= "file.settle.period";
@@ -163,7 +151,6 @@ public class Configurator {
         defaults.setProperty(MQ_HOST, "MQ_HOST");
         defaults.setProperty(MQ_PORT, "MQ_PORT");
         defaults.setProperty(MQ_QUEUE_MANAGER, "MQ_QUEUE_MANAGER");
-        //defaults.setProperty(MQ_QUEUE, "MQ_QUEUE");
         defaults.setProperty(MQ_UPLOAD_QUEUE, "MQ_UPLOAD_QUEUE");
         defaults.setProperty(MQ_DOWNLOAD_QUEUE, "MQ_DOWNLOAD_QUEUE");
         defaults.setProperty(FILE_SETTLE_PERIOD, String.valueOf(10));
@@ -182,9 +169,8 @@ public class Configurator {
         } catch (Exception e) {
             System.out.println("Exception while loading properties file " + PROPERTY_FILE);
             e.printStackTrace();
-        } finally {
-            return props;
-       }
+        } 
+        return props;
     }
 
 }
