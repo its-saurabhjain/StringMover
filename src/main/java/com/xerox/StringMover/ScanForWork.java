@@ -93,23 +93,36 @@ public class ScanForWork extends TimerTask {
 					//send Ping MQ message if it has not been sent
 					if(hasFile == null)
 					{
-						//messageSent = sendMessage(pingMessage);
+						messageSent = sendMessage(pingMessage);
 						fileRecord = new FileRecord(name, file.getAbsolutePath());
 						fileList.put(msgCor, fileRecord);
+						log.debug("Send Ping message to the queue:" + pingMessage);
 					}
 				}
 			////////////////////////////////////////Receive Ping Responses and send the main file and move the files based on response status////////////////////////////
 			String receivedMessage = receiveMessage();
-			String responseMessages[] = receivedMessage.split("\\_");
-			if(responseMessages.length > 0)
+			if(receivedMessage != null)
 			{
-				for (int i= 0; i <= responseMessages.length; i++)
+				String responseMessages[] = receivedMessage.split("\\_");
+				if(responseMessages.length > 0)
 				{
-					String message [] = responseMessages[i].split("\\=");
-					String messageCorResp = message[0].substring(0, 25);
-					String messageStatus = message[1];
-					processFile(messageCorResp, messageStatus, newloc, invalid);
+					for (int i= 0; i <= responseMessages.length; i++)
+					{
+						
+						String message [] = responseMessages[i].split("\\=");
+						String messageCorResp = message[0].substring(0, 25);
+						String messageStatus = message[1];
+						log.debug("Response messagefrom Queue & Status:" + messageCorResp + ":" + messageStatus);
+						processFile(messageCorResp, messageStatus, newloc, invalid);
+					}
 				}
+			}	
+			else
+			{
+				if( log.isDebugEnabled() ) {
+					log.debug("No message received from the Download Queue");
+				}
+				
 			}
 		}
 		catch(Exception exp)
@@ -136,7 +149,7 @@ public class ScanForWork extends TimerTask {
 	}
 	private String receiveMessage()
 	{
-		String messageReceived = "";
+		String messageReceived = null;
 		try{
 			mqms.setQueueName(Configurator.getInstance().getMQ_DOWNLOAD_QUEUE());	
 			messageReceived = mqms.receive();
@@ -160,12 +173,14 @@ public class ScanForWork extends TimerTask {
 				File file1 = new File(rec.filePath);
 				String mqMessage = fileParser.parseFile2(file1.getAbsolutePath());
 				//send the message to MQ
+				log.debug("Sending message to Queue:\t\n" + mqMessage);
 				boolean messageSent = sendMessage(mqMessage);
 				if(messageSent) {
 					// move file to archive
 					boolean success2 = fileParser.moveFile(file1, newloc, invalid);
-					if( success2 ) {
+					if( success2) {
 						fileList.remove(messageCorResp);
+						log.debug("File Moved to" + newloc.getAbsolutePath() + "\\" + file1.getName());
 						if( log.isErrorEnabled() ) {
 							log.error("Moved " + file1.getName() + " back to original position for retry");
 						}
@@ -186,6 +201,7 @@ public class ScanForWork extends TimerTask {
 			{
 				File file1 = new File(rec.filePath);
 				boolean success2 = fileParser.moveFile(file1, invalid, newloc);
+				log.debug("File Moved to" + invalid.getAbsolutePath() + "\\" + file1.getName());
 				if(success2) {
 					//remove the record from the processing list
 					fileList.remove(messageCorResp);

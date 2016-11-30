@@ -147,7 +147,7 @@ public class MQMessagingService implements IMessagingService {
 		if( log.isDebugEnabled() ) {
 			log.debug("receiving message");
 		}
-		String msgText= "";	
+		String msgText= null;	
 		open(MQC.MQOO_INQUIRE | MQC.MQOO_INPUT_EXCLUSIVE | MQC.MQOO_BROWSE);
 		try {
 				
@@ -168,10 +168,13 @@ public class MQMessagingService implements IMessagingService {
 					sb.append(buf.readString(buf.getMessageLength()));
 					sb.append("_");
 			        System.out.println("msg text: "+msgText);
-			        //gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_MSG_UNDER_CURSOR;
-			        gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_MSG_UNDER_CURSOR;
+			        gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_MSG_UNDER_CURSOR;
+			        //gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_MSG_UNDER_CURSOR;
 			        queue.get(buf, gmo);
 			        counter ++;
+			        if( log.isInfoEnabled() ) {
+						log.info("Message: " + buf.putApplicationName + "|" + buf.putDateTime.getTime() + "|" + buf.readLine());
+					}
 				}
 				if(sb.length() > 0)
 				{
@@ -179,9 +182,7 @@ public class MQMessagingService implements IMessagingService {
 					msgText = sb.toString();
 				}
 				messages = queue.getCurrentDepth();
-			if( log.isInfoEnabled() ) {
-				log.info("Message: " + buf.putApplicationName + "|" + buf.putDateTime.getTime() + "|" + buf.readLine());
-			}
+			
 			return msgText;
 		} catch (MQException e) {
 			if( e.reasonCode == MQException.MQRC_NO_MSG_AVAILABLE ) {

@@ -1,26 +1,22 @@
-Last update: November 29, 2004
-Lee Grey
-suntrust@leegrey.com
-
-
 Overview
-========
-FANS is a File Availability Notification System.  Simply put, that 
-means that FANS is a program that watches a directory for files with 
-particular extensions.  When a file of interest is found, FANS moves 
-the file to a pick-up directory and sends an MQ message containing the 
-name of the file to the specified Queue Manager and Queue.  At this 
-point, FANS is finished with that file.  If anything goes wrong in the 
-process of moving the file or sending the notification message, the 
-process is backed out, so that the next time around, the file will be 
-retried.  FANS polls the directory at a rate that is specified by the 
-user.
+========================================================
+StringMover is a File Delivery Service. It is program that 
+watches a directory  for files with  particular extensions.
+When a file of interest is found,StringMover moves sends an
+MQ message containing  the file data  as MQ  message to the 
+specified  Queue Manager and Queue, then  moves the file to
+a backup directory. At  this point, StringMover is finished
+with  that file. If anything  goes wrong  in the process of 
+moving the  file or  sending the  notification message, the 
+process is backed out, so that the next time around, the 
+file will be retried. StringMover polls the directory at a 
+rate that is specified by the user.
 
-The ECLOut (ECPi Send) Process
-==============================
-Sierra Xchange drops files into the directory E:\ECLOut\Stage.
+The StringMover Process
+============================================================
+APG drops files into the directory E:\ECLOut\Stage.
 
-FANS periodically scans the directory for the presence of new files.
+StringMover scans the directory for the presence of new files.
 When it finds one, it takes the following steps:
 
   1. It reads the file's Type 99 record to extract the
@@ -32,7 +28,7 @@ When it finds one, it takes the following steps:
      looks for files.
   3. It builds an MQ message consisting of the following:
 
-        SUNMQMSG               hard-coded string
+    SUNMQMSG               hard-coded string
 	0001                   version id
 	MMddyyyyHHmmss00       timestamp
 	AFSECPI                hard-coded string
@@ -174,9 +170,9 @@ IBM MQ Series client software.
 
 Running the Application
 =======================
-Running FANS is as simple as issuing the following command:
+Running StringMover is as simple as issuing the following command:
 
-	java -jar fans.jar
+	java -jar StringMover.jar
 
 It is acceptable to issue this command from a directory other than the 
 one in which the jar files were copied, in which case it is necessary 
