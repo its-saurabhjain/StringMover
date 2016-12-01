@@ -1,0 +1,2 @@
+java -cp ".\Config;.\lib\commons-io-1.0\commons-io-1.0.jar;.\lib\commons-logging-1.0.3\commons-logging.jar;.\lib\commons-logging-1.0.3\commons-logging-api.jar;.\lib\ibm-mq-for-java\com.ibm.mq.jar;.\lib\ibm-mq-for-java\connector.jar;.\lib\log4j-1.2.8.jar;.\lib\StringMover.jar" com.xerox.StringMover.StringMover
+rem java -cp ".;commons-io-1.0.jar;commons-logging.jar;commons-logging-api.jar;com.ibm.mq.jar;connector.jar;log4j-1.2.8.jar" com.xerox.StringMover.StringMover

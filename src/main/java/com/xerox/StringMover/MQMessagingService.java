@@ -56,12 +56,15 @@ public class MQMessagingService implements IMessagingService {
 
 	public void open(int mode) throws Exception {
 		try {
+			if( log.isDebugEnabled() ) {
+				log.debug("Open Queue");
+			}
 			MQEnvironment.hostname = mqHost;
 			MQEnvironment.channel = mqChannel;
 			MQEnvironment.port = Integer.parseInt(mqPort);
 			MQEnvironment.userID = mqUserid;
-				
-			MQEnvironment.properties.put(MQC.TRANSPORT_PROPERTY,MQC.TRANSPORT_MQSERIES);
+			//MQEnvironment.properties.put(MQC.TRANSPORT_PROPERTY,MQC.TRANSPORT_MQSERIES);
+			
 			qmgr = new MQQueueManager(queueMgrName);
 			//openOption for receiving messages
 			int openOptions = MQC.MQOO_INQUIRE | MQC.MQOO_INPUT_EXCLUSIVE | MQC.MQOO_BROWSE;
@@ -76,6 +79,7 @@ public class MQMessagingService implements IMessagingService {
 			}
 		} catch (MQException e) {
 			close();
+			log.error("Unable to Open the queue:" + queueName);
 			throw new Exception("MQException: Completion code=" + e.completionCode + " Reason code=" + e.reasonCode, e);
 		}
 	}

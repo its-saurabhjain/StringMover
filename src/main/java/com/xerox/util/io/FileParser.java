@@ -8,9 +8,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 import java.util.StringTokenizer;
+import org.apache.commons.io.FileUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,20 +31,6 @@ public class FileParser {
 			      String record = tokens.nextToken();
 					      if(!record.startsWith("*"))
 					      {
-					    	  /*
-					    	  Record rec = new Record();
-					    	  rec.S200_STG_HDR = "*";
-					    	  rec.S200_STG_HDR_TYP = record.substring(0, 2);
-					    	  rec.S200_CYC_NUM = record.substring(2, 3);
-					    	  rec.S200_CYC_DATE = record.substring(3, 13);
-					    	  rec.S200_SORT_TYPE = record.substring(13, 16);
-					    	  rec.S200_BANK_NO = record.substring(16, 19);
-					    	  rec.S200_ENTRY_NO =  record.substring(19, 23);
-					    	  rec.S200_SORTER_NO = record.substring(23, 25);
-					    	  rec.S200_X9_FILE_NM = record.substring(25, record.length());
-					    	  rec.S200_FILLER1 = tokens.nextToken();
-					    	  messageText = rec.toString();
-					    	  */
 					    	  messageText = record.substring(0, record.length());
 					    	  read.close();
 					    	  break;
@@ -61,19 +48,10 @@ public class FileParser {
 		StringBuilder builder = new StringBuilder();
 		   try{
 			   
-			   /*
-			   BufferedReader read = new BufferedReader(new FileReader(fileLoc));
-			   String line = null;
-			   while( (line = read.readLine()) != null) {
-			      StringTokenizer tokens = new StringTokenizer(line);
-			      String record = tokens.nextToken();
-			      builder.append(record);
-		   		}
-			   messageText = builder.toString();
-			   */
 			   Charset charset = Charset.forName("UTF-8");
-			   byte[] encoded = Files.readAllBytes(Paths.get(fileLoc));
-			   return charset.decode(ByteBuffer.wrap(encoded)).toString();
+			   //byte[] encoded = Files.readAllBytes(Paths.get(fileLoc));
+			   //return charset.decode(ByteBuffer.wrap(encoded)).toString();
+			   return FileUtils.readFileToString(new File(fileLoc), "UTF-8");
 			   
 			   }catch (Exception e){
 			     System.err.println("Error: " + e.getMessage());

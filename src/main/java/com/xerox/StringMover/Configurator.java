@@ -30,7 +30,7 @@ public class Configurator {
 		return _instance;
 	}
 
-    private static String PROPERTY_FILE = "StringMover.properties";
+    private static String PROPERTY_FILE = "./Config/StringMover.properties";
     private static String WATCH_DIRECTORY = "path.watch";
     private static String BACKUP_DIRECTORY = "path.backup";
     private static String SEND_DIRECTORY = "path.send";

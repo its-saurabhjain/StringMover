@@ -71,7 +71,7 @@ public class ScanForWork extends TimerTask {
 			log.debug("Sleeping for " + settleTime + " seconds to let files settle before acting upon them...");
 			Thread.sleep(1000L * settleTime);
 			// keep trying until some file succeeds or no files are left to try 
-			////////////////////////////////////////////////Send Ping Messages///////////////////////////////////
+			/////////////Send Ping Messages///////////////////////////////////
 			FileRecord fileRecord;
 			FileRecord hasFile;
 			Iterator it = files.iterator();
@@ -99,7 +99,7 @@ public class ScanForWork extends TimerTask {
 						log.debug("Send Ping message to the queue:" + pingMessage);
 					}
 				}
-			////////////////////////////////////////Receive Ping Responses and send the main file and move the files based on response status////////////////////////////
+			/////////Receive Ping Responses and send the main file and move the files based on response status////////////////////////////
 			String receivedMessage = receiveMessage();
 			if(receivedMessage != null)
 			{
@@ -108,7 +108,6 @@ public class ScanForWork extends TimerTask {
 				{
 					for (int i= 0; i <= responseMessages.length; i++)
 					{
-						
 						String message [] = responseMessages[i].split("\\=");
 						String messageCorResp = message[0].substring(0, 25);
 						String messageStatus = message[1];
@@ -122,7 +121,6 @@ public class ScanForWork extends TimerTask {
 				if( log.isDebugEnabled() ) {
 					log.debug("No message received from the Download Queue");
 				}
-				
 			}
 		}
 		catch(Exception exp)
